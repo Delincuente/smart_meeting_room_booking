@@ -2,13 +2,11 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { getRooms, getBookings, createBooking } from '../services/api';
 
-// use rect hook form for form handling
 export default function Dashboard() {
   const [rooms, setRooms] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Pagination State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 5;
@@ -20,7 +18,7 @@ export default function Dashboard() {
     register,
     handleSubmit,
     reset,
-    formState: { isSubmitting }
+    formState: { isSubmitting, errors }
   } = useForm();
 
   useEffect(() => {
@@ -64,11 +62,9 @@ export default function Dashboard() {
       await createBooking(data);
 
       setStatus({ type: 'success', message: 'Room booked successfully!' });
-      reset(); // Clears all form fields back to default values
+      reset();
 
-      // If we booked the room that is currently selected in the tabs, refresh it
       if (data.roomId === filterRoomId) {
-        // Option to go back to page 1 to see the newest booking
         if (page !== 1) setPage(1);
         else fetchRoomBookings(filterRoomId, 1);
       }
@@ -90,7 +86,6 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
-          {/* Booking Form */}
           <div className="md:col-span-4 bg-white p-6 border rounded shadow-sm h-fit">
             <h2 className="text-xl font-semibold mb-4 text-gray-700">Book a Room</h2>
 
@@ -98,7 +93,7 @@ export default function Dashboard() {
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Room</label>
                 <select
-                  {...register('roomId', { required: true })}
+                  {...register('roomId', { required: 'Please select a room' })}
                   defaultValue=""
                   className="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50"
                 >
@@ -107,33 +102,51 @@ export default function Dashboard() {
                     <option key={room._id} value={room._id}>{room.name}</option>
                   ))}
                 </select>
+                {errors.roomId && <p className="text-red-500 text-xs mt-1">{errors.roomId.message}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
                 <input
-                  type="email"
-                  {...register('userEmail', { required: true })}
+                  type="text"
+                  {...register('userEmail', { 
+                    required: 'Email is required',
+                    pattern: {
+                      value: /.+@.+\..+/,
+                      message: 'Please enter a valid email address'
+                    }
+                  })}
                   className="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
+                {errors.userEmail && <p className="text-red-500 text-xs mt-1">{errors.userEmail.message}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Start Time</label>
                 <input
                   type="datetime-local"
-                  {...register('startTime', { required: true })}
+                  {...register('startTime', { required: 'Start Time is required' })}
                   className="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
+                {errors.startTime && <p className="text-red-500 text-xs mt-1">{errors.startTime.message}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">End Time</label>
                 <input
                   type="datetime-local"
-                  {...register('endTime', { required: true })}
+                  {...register('endTime', { 
+                    required: 'End Time is required',
+                    validate: (value, formValues) => {
+                      if (formValues.startTime && new Date(value) <= new Date(formValues.startTime)) {
+                        return 'End time must be strictly greater than start time';
+                      }
+                      return true;
+                    }
+                  })}
                   className="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
+                {errors.endTime && <p className="text-red-500 text-xs mt-1">{errors.endTime.message}</p>}
               </div>
 
               {status.message && (
@@ -243,3 +256,4 @@ export default function Dashboard() {
     </div>
   );
 }
+
