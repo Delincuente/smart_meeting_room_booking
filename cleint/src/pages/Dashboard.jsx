@@ -26,18 +26,13 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (filterRoomId) {
-      fetchRoomBookings(filterRoomId, page);
-    }
+    fetchRoomBookings(filterRoomId, page);
   }, [filterRoomId, page]);
 
   const fetchRooms = async () => {
     try {
       const res = await getRooms();
       setRooms(res.data);
-      if (res.data.length > 0) {
-        setFilterRoomId(res.data[0]._id);
-      }
     } catch (error) {
       console.error('Error fetching rooms:', error);
     }
@@ -74,7 +69,7 @@ export default function Dashboard() {
     }
   };
 
-  const selectedRoomName = rooms.find(r => r._id === filterRoomId)?.name || 'Unknown Room';
+  const selectedRoomName = filterRoomId ? rooms.find(r => r._id === filterRoomId)?.name || 'Unknown Room' : 'All Rooms';
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8 font-sans">
@@ -109,7 +104,7 @@ export default function Dashboard() {
                 <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
                 <input
                   type="text"
-                  {...register('userEmail', { 
+                  {...register('userEmail', {
                     required: 'Email is required',
                     pattern: {
                       value: /.+@.+\..+/,
@@ -135,7 +130,7 @@ export default function Dashboard() {
                 <label className="block text-sm font-medium text-gray-600 mb-1">End Time</label>
                 <input
                   type="datetime-local"
-                  {...register('endTime', { 
+                  {...register('endTime', {
                     required: 'End Time is required',
                     validate: (value, formValues) => {
                       if (formValues.startTime && new Date(value) <= new Date(formValues.startTime)) {
@@ -165,7 +160,6 @@ export default function Dashboard() {
             </form>
           </div>
 
-          {/* Room List and Bookings List */}
           <div className="md:col-span-8 bg-white p-6 border rounded shadow-sm flex flex-col h-full min-h-[500px]">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-700">
@@ -174,12 +168,24 @@ export default function Dashboard() {
             </div>
 
             <div className="flex overflow-x-auto gap-2 mb-6 pb-2 border-b">
+              <button
+                onClick={() => {
+                  setFilterRoomId('');
+                  setPage(1);
+                }}
+                className={`px-4 py-2 rounded-t whitespace-nowrap font-medium transition-colors ${filterRoomId === ''
+                  ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+              >
+                All
+              </button>
               {rooms.map(room => (
                 <button
                   key={room._id}
                   onClick={() => {
                     setFilterRoomId(room._id);
-                    setPage(1); // Reset page on tab change
+                    setPage(1);
                   }}
                   className={`px-4 py-2 rounded-t whitespace-nowrap font-medium transition-colors ${filterRoomId === room._id
                     ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
@@ -191,7 +197,6 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* Bookings List Area */}
             <div className="flex-1">
               {loading ? (
                 <div className="text-center py-10 bg-gray-50 rounded border border-dashed">
@@ -225,7 +230,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Pagination Controls */}
             {!loading && bookings.length > 0 && (
               <div className="mt-6 pt-4 border-t flex items-center justify-between">
                 <p className="text-sm text-gray-500">
