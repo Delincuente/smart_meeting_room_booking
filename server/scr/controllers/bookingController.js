@@ -15,14 +15,15 @@ export const getBookings = async (req, res, next) => {
       query.roomId = req.query.roomId;
     }
 
-    const bookings = await Booking.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate('roomId', "name")
-      .lean();
-
-    const total = await Booking.countDocuments(query);
+    const [bookings, total] = await Promise.all([
+      Booking.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('roomId', "name")
+        .lean(),
+      Booking.countDocuments(query)
+    ]);
 
     const formattedBookings = bookings.map(booking => ({
       ...booking,
